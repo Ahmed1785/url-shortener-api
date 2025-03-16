@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.AspNetCore.Mvc;
+using UrlShortenerAPI.Data;
+using UrlShortenerAPI.Models;
 
 namespace UrlShortenerAPI.Controllers
 {
@@ -9,45 +12,33 @@ namespace UrlShortenerAPI.Controllers
     [ApiController]
     public class UrlsController : ControllerBase
     {
+
+        private readonly CosmosDbService _cosmosDbService;
+
+        public UrlsController(CosmosDbService cosmosDbService)
+        {
+            _cosmosDbService = cosmosDbService;
+        }
         // Temporary in-memory storage
         private static readonly Dictionary<string, Url> UrlDatabase = new();
 
-        // POST api/urls
         [HttpPost]
-        public ActionResult<Url> ShortenUrl([FromBody] Url urlRequest)
+        public async Task<IActionResult> CreateUrl([FromBody] Url url)
         {
-            if (!Uri.IsWellFormedUriString(urlRequest.OriginalUrl, UriKind.Absolute))
-            {
-                return BadRequest("Invalid URL format.");
-            }
-
-            // Generate a short URL (simple example, can be improved)
-            var shortenedUrl = Guid.NewGuid().ToString().Substring(0, 8); // First 8 chars of GUID
-            urlRequest.ShortenedUrl = shortenedUrl;
-            urlRequest.CreatedAt = DateTime.UtcNow;
-            urlRequest.ClickCount = 0;
-
-            // Store the URL in the "database"
-            UrlDatabase[shortenedUrl] = urlRequest;
-
-            return CreatedAtAction(nameof(GetOriginalUrl), new { shortenedUrl = shortenedUrl }, urlRequest);
+            await _cosmosDbService.CreateOrUpdateUrlAsync(url);
+            return Ok(url);
         }
 
         // GET api/urls/{shortenedUrl}
         [HttpGet("{shortenedUrl}")]
-        public ActionResult RedirectToUrl(string shortenedUrl)
+        public async Task<IActionResult> GetUrl(string shortenedUrl)
         {
-            if (!UrlDatabase.ContainsKey(shortenedUrl))
+            var url = await _cosmosDbService.GetUrlAsync(shortenedUrl);
+            if (url == null)
             {
-                return NotFound("Shortened URL not found.");
+                return NotFound();
             }
-
-            // Increment the click count
-            var url = UrlDatabase[shortenedUrl];
-            url.ClickCount++;
-
-            // Redirect to the original URL
-            return Redirect(url.OriginalUrl);
+            return Ok(url);
         }
 
         // Test route

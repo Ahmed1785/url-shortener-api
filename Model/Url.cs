@@ -10,13 +10,11 @@ namespace UrlShortenerAPI.Models
         private DateTime _createdAt;
         private int _clickCount;
 
-        // Property for OriginalUrl with validation
         public string OriginalUrl
         {
             get { return _originalUrl; }
             set
             {
-                // Ensure the Original URL is valid
                 if (!Uri.IsWellFormedUriString(value, UriKind.Absolute))
                     throw new ArgumentException("Invalid URL format.", nameof(OriginalUrl));
 
@@ -24,7 +22,6 @@ namespace UrlShortenerAPI.Models
             }
         }
 
-        // Property for ShortenedUrl with validation
         public string ShortenedUrl
         {
             get { return _shortenedUrl; }
@@ -37,13 +34,11 @@ namespace UrlShortenerAPI.Models
             }
         }
 
-        // Property for ExpiryDate with validation
         public DateTime ExpiryDate
         {
             get { return _expiryDate; }
             set
             {
-                // Ensure ExpiryDate is not in the past
                 if (value < DateTime.UtcNow)
                     throw new ArgumentException("Expiry date cannot be in the past.", nameof(ExpiryDate));
 
@@ -51,13 +46,11 @@ namespace UrlShortenerAPI.Models
             }
         }
 
-        // Property for CreatedAt with validation
         public DateTime CreatedAt
         {
             get { return _createdAt; }
             private set
             {
-                // CreatedAt should be set only once (when the object is created)
                 if (_createdAt != default)
                     throw new InvalidOperationException("CreatedAt cannot be modified.");
 
@@ -65,13 +58,11 @@ namespace UrlShortenerAPI.Models
             }
         }
 
-        // Property to track number of clicks
         public int ClickCount
         {
             get { return _clickCount; }
             private set
             {
-                // Click count should not be negative
                 if (value < 0)
                     throw new ArgumentException("Click count cannot be negative.", nameof(ClickCount));
 
@@ -79,17 +70,15 @@ namespace UrlShortenerAPI.Models
             }
         }
 
-        // Constructor for the model (sets CreatedAt automatically to the current UTC time)
         public Url(string originalUrl, string shortenedUrl, DateTime expiryDate)
         {
             OriginalUrl = originalUrl;
             ShortenedUrl = shortenedUrl;
             ExpiryDate = expiryDate;
-            CreatedAt = DateTime.UtcNow;  // Set CreatedAt to current time
-            ClickCount = 0;  // Initialize click count to 0
+            CreatedAt = DateTime.UtcNow; 
+            ClickCount = 0; 
         }
 
-        // Method to increment the click count
         public void IncrementClickCount()
         {
             ClickCount++;

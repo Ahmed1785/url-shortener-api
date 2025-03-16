@@ -1,49 +1,51 @@
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+var keyVaultName = "my-cosmos-keyvault";
+var secretName = "CosmosConnectionString";
+var kvUri = $"https://{keyVaultName}.vault.azure.net";
 
-builder.Services.AddControllers(); 
+// Create the KeyVault client
+var client = new SecretClient(new Uri(kvUri), new DefaultAzureCredential());
+
+// Retrieve the secret asynchronously
+KeyVaultSecret secret;
+try
+{
+    secret = await client.GetSecretAsync(secretName);
+}
+catch (Exception ex)
+{
+    // Handle exceptions if the secret retrieval fails
+    Console.WriteLine($"Error retrieving secret: {ex.Message}");
+    // Optionally, throw or exit gracefully
+    throw;
+}
+
+var cosmosConnectionString = secret.Value;
+
+// Now use the connection string for CosmosDbService
+builder.Services.AddSingleton<CosmosDbService>(sp =>
+    new CosmosDbService(cosmosConnectionString, 
+        "url-shortener-cosmos-db", 
+        "UrlsContainer"));
+
+builder.Services.AddOpenApi();
+builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-// app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
-// Configure the HTTP request pipeline
 app.UseRouting();
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

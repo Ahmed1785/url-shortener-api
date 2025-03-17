@@ -75,8 +75,8 @@ namespace UrlShortenerAPI.Models
             OriginalUrl = originalUrl;
             ShortenedUrl = shortenedUrl;
             ExpiryDate = expiryDate;
-            CreatedAt = DateTime.UtcNow; 
-            ClickCount = 0; 
+            CreatedAt = DateTime.UtcNow;
+            ClickCount = 0;
         }
 
         public void IncrementClickCount()

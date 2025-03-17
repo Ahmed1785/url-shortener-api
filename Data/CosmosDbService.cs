@@ -1,8 +1,4 @@
 using Microsoft.Azure.Cosmos;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using UrlShortenerAPI.Models;
 
 namespace UrlShortenerAPI.Services
@@ -19,13 +15,20 @@ namespace UrlShortenerAPI.Services
             _container = database.GetContainer(containerName);
         }
 
-        public async Task<Url> CreateUrlAsync(Url url)
+        public async Task CreateOrUpdateUrlAsync(Url url)
         {
-            // Create the shortened URL in the database
-            var result = await _container.CreateItemAsync(url, new PartitionKey(url.ShortenedUrl));
-            return result.Resource;
+            try
+            {
+                // Upsert means insert or update based on the ID
+                await _container.UpsertItemAsync(url, new PartitionKey(url.ShortenedUrl));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating/updating URL: {ex.Message}");
+            }
         }
 
+        // Get a URL by its Shortened URL
         public async Task<Url> GetUrlAsync(string shortenedUrl)
         {
             try
@@ -33,24 +36,47 @@ namespace UrlShortenerAPI.Services
                 var response = await _container.ReadItemAsync<Url>(shortenedUrl, new PartitionKey(shortenedUrl));
                 return response.Resource;
             }
-            catch (CosmosException)
+            catch (Exception ex)
             {
+                Console.WriteLine($"Error fetching URL: {ex.Message}");
                 return null;
             }
         }
 
+        // Get all URLs in the database (useful for debugging or admin purposes)
         public async Task<List<Url>> GetAllUrlsAsync()
         {
-            var query = _container.GetItemQueryIterator<Url>("SELECT * FROM c");
-            List<Url> urls = new List<Url>();
-
-            while (query.HasMoreResults)
+            try
             {
-                var response = await query.ReadNextAsync();
-                urls.AddRange(response);
-            }
+                var query = _container.GetItemQueryIterator<Url>("SELECT * FROM c");
+                List<Url> urls = new List<Url>();
 
-            return urls;
+                while (query.HasMoreResults)
+                {
+                    var result = await query.ReadNextAsync();
+                    urls.AddRange(result);
+                }
+
+                return urls;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching all URLs: {ex.Message}");
+                return new List<Url>();
+            }
+        }
+
+        // Delete a URL by its Shortened URL
+        public async Task DeleteUrlAsync(string shortenedUrl)
+        {
+            try
+            {
+                await _container.DeleteItemAsync<Url>(shortenedUrl, new PartitionKey(shortenedUrl));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting URL: {ex.Message}");
+            }
         }
     }
 }

@@ -1,5 +1,7 @@
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
+using UrlShortenerAPI.Services;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,18 +20,15 @@ try
 }
 catch (Exception ex)
 {
-    // Handle exceptions if the secret retrieval fails
     Console.WriteLine($"Error retrieving secret: {ex.Message}");
-    // Optionally, throw or exit gracefully
     throw;
 }
 
 var cosmosConnectionString = secret.Value;
 
-// Now use the connection string for CosmosDbService
 builder.Services.AddSingleton<CosmosDbService>(sp =>
-    new CosmosDbService(cosmosConnectionString, 
-        "url-shortener-cosmos-db", 
+    new CosmosDbService(cosmosConnectionString,
+        "url-shortener-cosmos-db",
         "UrlsContainer"));
 
 builder.Services.AddOpenApi();

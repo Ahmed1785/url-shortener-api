@@ -45,6 +45,14 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "Azure.Identity": {
+              "target": "Package",
+              "version": "[1.13.2, )"
+            },
+            "Azure.Security.KeyVault.Secrets": {
+              "target": "Package",
+              "version": "[4.7.0, )"
+            },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
               "version": "[9.0.0, )"
@@ -52,6 +60,10 @@
             "Microsoft.Azure.Cosmos": {
               "target": "Package",
               "version": "[3.47.2, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.3, )"
             }
           },
           "imports": [
